@@ -9,10 +9,12 @@ player_image.src = 'https://www.nicepng.com/png/full/13-138961_vector-spaces-shi
 const background_image = new Image();
 background_image.src = 'https://cdn.pixabay.com/photo/2017/08/30/01/05/milky-way-2695569_1280.jpg';
 
+let gameActive = false;
 let playerX = CANVAS_WIDTH/2;
 let playerSpeed = 0;
 let enemyX = 150;
 let enemyY = 5;
+let bulletLimit = 2;
 
 const enemies = [];
 class Enemy {
@@ -21,7 +23,7 @@ class Enemy {
         this.y = y;
         this.width = 50;
         this.height = 50;
-        this.speed = 2;
+        this.speed = 3;
         this.active = true;
     }
 
@@ -82,17 +84,40 @@ class Bullet {
     }
 }
 
-function shoot() {
-    let bullet = new Bullet(playerX, CANVAS_HEIGHT-50, 4)
-    bullets.push(bullet);
+function spawnEnemies() {
+    enemies.push(new Enemy(50, 50));
+    enemies.push(new Enemy(200, 50));
+    enemies.push(new Enemy(125, 50));
 }
 
+
+//-------------------------------------------------------------------
+// Player Controls
+
+function startMovingLeft() {
+    playerSpeed = -2;
+}
+function startMovingRight() {
+    playerSpeed = 2;
+}
+function stopMoving() {
+    playerSpeed = 0;
+}
+
+function shoot() {
+    if (bullets.length < bulletLimit) {
+        let bullet = new Bullet(playerX, CANVAS_HEIGHT-50, 4)
+        bullets.push(bullet);
+    }
+}
+
+// Handle key presses
 function onKeyDown(event) {
     let key = event.key;
     if (key == "ArrowLeft") {
-        playerSpeed = -2;
+        startMovingLeft();
     } else if (key == "ArrowRight") {
-        playerSpeed = 2;
+        startMovingRight();
     } else if (key == " ") {
         shoot();
     }
@@ -100,87 +125,124 @@ function onKeyDown(event) {
 function onKeyUp(event) {
     let key = event.key;
     if (key == "ArrowLeft") {
-        playerSpeed = 0;
+        stopMoving();
     } else if (key == "ArrowRight") {
-        playerSpeed = 0;
+        stopMoving();
     }
 }
 document.onkeydown = onKeyDown;
 document.onkeyup = onKeyUp;
 
-function onTouchStart(event) {
-    let pos = event.touches[0];
-    if(pos.clientX > CANVAS_WIDTH/2) {
-        playerSpeed = 2;
+// Mouse controls
+function onMouseDown(event) {
+    let x = event.offsetX;
+    if (x < CANVAS_WIDTH / 2) {
+        startMovingLeft();
+    } else if (x > CANVAS_WIDTH/2) {
+        startMovingRight();
     }
-    else if(pos.clientX < CANVAS_WIDTH/2) {
-        playerSpeed = -2;
+}
+function onMouseUp(event) {
+    stopMoving();
+}
+canvas.addEventListener("mousedown", onMouseDown);
+canvas.addEventListener("mouseup", onMouseUp);
+
+// Touch controls
+function onTouchStart(event) {
+    let x = event.touches[0].clientX;
+    if (x < CANVAS_WIDTH/2) {
+        startMovingLeft();
+    }
+    else if (x > CANVAS_WIDTH/2) {
+        startMovingRight();
     }
 }
 function onTouchEnd(event) {
     playerSpeed = 0;
 }
-canvas.addEventListener("touchstart", onTouchStart);
-canvas.addEventListener("touchend", onTouchEnd);
+canvas.addEventListener("ontouchstart", onTouchStart);
+canvas.addEventListener("ontouchend", onTouchEnd);
 
 function animate() {
-    // Draw the background
-    ctx.drawImage(background_image, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    if(gameActive) {
+        // Draw the background
+        ctx.drawImage(background_image, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-    // Draw the player
-    ctx.drawImage(player_image, playerX-25, CANVAS_HEIGHT-50, 50, 50);
+        // Draw the player
+        ctx.drawImage(player_image, playerX-25, CANVAS_HEIGHT-50, 50, 50);
+        
+    //    ctx.fillStyle = "#FF0000";
+    //    ctx.fillRect(enemyX-25, enemyY, 50, 50);
 
-//    ctx.fillStyle = "#FF0000";
-//    ctx.fillRect(enemyX-25, enemyY, 50, 50);
+        playerX += playerSpeed;
 
-    playerX += playerSpeed;
+        // Tick and draw the enemies
+        let i=0;
+        while (i < enemies.length) {
+            let enemy = enemies[i];
+            if (enemy.active) {
+                enemy.tick();
+                enemy.draw(ctx);
+            }
 
-    // Tick and draw the enemies
-    let i=0;
-    while (i < enemies.length) {
-        let enemy = enemies[i];
-        if (enemy.active) {
-            enemy.tick();
-            enemy.draw(ctx);
+            // Prune any deactivated enemies
+            if (!enemy.active) {
+                enemies.splice(i, 1);
+            } else {
+                i++;
+            }
+            // Check game end
+            if(enemy.y >= CANVAS_HEIGHT-50) {
+                gameActive = false
+            }
         }
-        i = i + 1;
-    }
 
-    // Tick and draw the bullets
-    i=0;
-    while (i < bullets.length) {
-        let bullet = bullets[i];
-        if (bullet.active) {
-            bullet.tick();
-            bullet.draw(ctx);
+        // Tick and draw the bullets
+        i=0;
+        while (i < bullets.length) {
+            let bullet = bullets[i];
+            if (bullet.active) {
+                bullet.tick();
+                bullet.draw(ctx);
+            }
 
-            // Check for collisions and misses
-            let hit = false;
+            // Prune any deactivated enemies
+            if(bullet.y < 0) {
+                // Bullet goes off the top of the screen
+                bullet.active = false;
+            }
+            if (!bullet.active) {
+                bullets.splice(i, 1);
+            } else {
+                i++;
+            }
+        }
+
+        // Check for collisions between bullets and enemies
+        for (i=0; i<bullets.length; i++) {
+            let bullet = bullets[i];
             for (let j=0; j<enemies.length; j++) {
-                enemy = enemies[j];
+                let enemy = enemies[j];
                 if (enemy.active) {
                     if (bullet.checkCollision(enemy)) {
                         bullet.active = false;
                         enemy.active = false;
-                        console.log("hit!");
-                    } else if(bullet.y < 0) {
-                        bullet.active = false;
-                        console.log("miss!");
+                        /* Todo: Score, Explosion/Death animation, SFX*/
                     }
                 }
             }
         }
-
-        i++;
+        if(enemies.length < 1) {
+            spawnEnemies();
+        }
+        requestAnimationFrame(animate);
     }
-    
-    requestAnimationFrame(animate);
 }
 
 function main() {
-    enemies.push(new Enemy(50, 50));
-    enemies.push(new Enemy(200, 50));
-    enemies.push(new Enemy(125, 50));
+    spawnEnemies();
+    gameActive = true;
     animate();
 }
 main();
