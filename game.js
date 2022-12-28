@@ -120,6 +120,8 @@ function onTouchStart(event) {
 function onTouchEnd(event) {
     playerSpeed = 0;
 }
+canvas.addEventListener("touchstart", onTouchStart);
+canvas.addEventListener("touchend", onTouchEnd);
 
 function animate() {
     // Draw the background
