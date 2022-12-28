@@ -8,6 +8,14 @@
   </head>
 
 <html>
+    <div class="topnav">
+        <a onclick="javascript:history.back()">Back</a>
+        <a href="index.html">Home</a>
+        <a href="about.html">About</a>
+      </div>
+    <div class="Score" id="score_text" style="font-family:'Courier New'; text-align: center;"><b>Score:</b></div>
     <canvas id="game-canvas"></canvas>
     <script src="game.js"></script>
+    <img src="file:///Users/oliver/Desktop/Screen%20Shot%202022-12-28%20at%201.04.49%20PM.png" class="start-background" id="background-start"></img>
+    <input class="start" type="button" onclick="javascript:main()" value="Start!" id="start_button">
 </html>

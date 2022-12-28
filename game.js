@@ -15,6 +15,7 @@ let playerSpeed = 0;
 let enemyX = 150;
 let enemyY = 5;
 let bulletLimit = 2;
+let score = 0;
 
 const enemies = [];
 class Enemy {
@@ -90,6 +91,13 @@ function spawnEnemies() {
     enemies.push(new Enemy(125, 50));
 }
 
+//-------------------------------------------------------------------
+// User Interface
+
+function setScore(newScore) {
+    score = newScore;
+    document.getElementById("score_text").innerHTML = "<b>Score: " + score + "</b>";
+}
 
 //-------------------------------------------------------------------
 // Player Controls
@@ -174,9 +182,16 @@ function animate() {
         
     //    ctx.fillStyle = "#FF0000";
     //    ctx.fillRect(enemyX-25, enemyY, 50, 50);
-
-        playerX += playerSpeed;
-
+        if(playerX > 25){
+            if(playerSpeed < 0) {
+                playerX += playerSpeed;
+            }
+        }
+        if(playerX < CANVAS_WIDTH-25) {
+            if(playerSpeed > 0) {
+                playerX += playerSpeed
+            }
+        }
         // Tick and draw the enemies
         let i=0;
         while (i < enemies.length) {
@@ -195,6 +210,10 @@ function animate() {
             // Check game end
             if(enemy.y >= CANVAS_HEIGHT-50) {
                 gameActive = false
+                enemies.splice(0, 3)
+                document.getElementById('start_button').disabled = false;
+                document.getElementById('start_button').style.opacity = '1';
+                document.getElementById('background-start').style.opacity = '1';
             }
         }
 
@@ -228,6 +247,9 @@ function animate() {
                     if (bullet.checkCollision(enemy)) {
                         bullet.active = false;
                         enemy.active = false;
+
+                        setScore(score + 1);
+
                         /* Todo: Score, Explosion/Death animation, SFX*/
                     }
                 }
@@ -241,8 +263,12 @@ function animate() {
 }
 
 function main() {
+    setScore(0);
     spawnEnemies();
     gameActive = true;
     animate();
+    document.getElementById('start_button').disabled = true;
+    document.getElementById('start_button').style.opacity = '0';
+    document.getElementById('background-start').style.opacity = '0';
 }
-main();
+
