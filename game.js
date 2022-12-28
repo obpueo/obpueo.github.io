@@ -108,6 +108,19 @@ function onKeyUp(event) {
 document.onkeydown = onKeyDown;
 document.onkeyup = onKeyUp;
 
+function onTouchStart(event) {
+    let pos = event.touches[0];
+    if(pos.clientX > CANVAS_WIDTH/2) {
+        playerSpeed = 2;
+    }
+    else if(pos.clientX < CANVAS_WIDTH/2) {
+        playerSpeed = -2;
+    }
+}
+function onTouchEnd(event) {
+    playerSpeed = 0;
+}
+
 function animate() {
     // Draw the background
     ctx.drawImage(background_image, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
